@@ -440,7 +440,10 @@ local function ESPOnEntity(entity)
             for _, l in pairs(skeletonLines) do if l then l.Visible = false end end
             return
         end
-        if not entity or not entity.Parent or not IsEntityAlive(entity) then RemoveESP(entity) return end
+        if not entity or not entity.Parent or not IsEntityAlive(entity) then 
+            RemoveESP(entity) 
+            return 
+        end
 
         UpdateSkeleton(entity, skeletonLines)
 
@@ -456,6 +459,11 @@ local function ESPOnEntity(entity)
         end
 
         local distance = (rootPart.Position - CurrentCamera.CFrame.Position).Magnitude
+        if not distance then
+            for _, d in pairs(Drawings) do if d then d.Visible = false end end
+            return
+        end
+        
         if distance > gameObjects.maxESPDistance then
             for _, d in pairs(Drawings) do if d then d.Visible = false end end
             return
@@ -465,6 +473,7 @@ local function ESPOnEntity(entity)
         local feetPos = rootPart.Position - Vector3.new(0, 3, 0)
         local topPos, topOn = CurrentCamera:WorldToViewportPoint(headPos)
         local bottomPos, bottomOn = CurrentCamera:WorldToViewportPoint(feetPos)
+        
         if not topOn and not bottomOn then
             for _, d in pairs(Drawings) do if d then d.Visible = false end end
             return
@@ -473,33 +482,55 @@ local function ESPOnEntity(entity)
         local height = bottomPos.Y - topPos.Y
         local width = height * 0.65
         local centerX = (topPos.X + bottomPos.X) / 2
+        
         if width > 0 and height > 0 then
             local yPos = topPos.Y
             local xPos = centerX - width / 2
-            Drawings.Box.Size = Vector2.new(width, height)
-            Drawings.Box.Position = Vector2.new(xPos, yPos)
-            Drawings.Box.Visible = gameObjects.boxEnabled
-            Drawings.Box.Color = gameObjects.boxColor
-            Drawings.Box.Thickness = 1
-            Drawings.Box.Filled = gameObjects.boxFilledEnabled
-            Drawings.Box.Transparency = gameObjects.boxFilledEnabled and 0.5 or 0
-
-            Drawings.BoxOutline.Size = Vector2.new(width, height)
-            Drawings.BoxOutline.Position = Vector2.new(xPos, yPos)
-            Drawings.BoxOutline.Visible = gameObjects.boxOutlineEnabled
-            Drawings.BoxOutline.Color = gameObjects.boxOutlineColor
-            Drawings.BoxOutline.Thickness = 2
-
-            Drawings.Name.Position = Vector2.new(centerX, yPos - 18)
-            Drawings.Name.Text = "[" .. player.Name .. "]"
-            Drawings.Name.Visible = gameObjects.nameEnabled
-            Drawings.Name.Color = gameObjects.nameColor
-
-            local meters = math.floor(distance / 2.5714)
-            Drawings.Distance.Position = Vector2.new(centerX, yPos + height + 5)
-            Drawings.Distance.Text = string.format("[%d M]", meters)
-            Drawings.Distance.Visible = gameObjects.distanceEnabled
-            Drawings.Distance.Color = gameObjects.distanceColor
+            
+            -- Box
+            if gameObjects.boxEnabled then
+                Drawings.Box.Size = Vector2.new(width, height)
+                Drawings.Box.Position = Vector2.new(xPos, yPos)
+                Drawings.Box.Visible = true
+                Drawings.Box.Color = gameObjects.boxColor
+                Drawings.Box.Thickness = 1
+                Drawings.Box.Filled = gameObjects.boxFilledEnabled
+                Drawings.Box.Transparency = gameObjects.boxFilledEnabled and 0.5 or 0
+            else
+                Drawings.Box.Visible = false
+            end
+            
+            -- Box Outline
+            if gameObjects.boxOutlineEnabled then
+                Drawings.BoxOutline.Size = Vector2.new(width, height)
+                Drawings.BoxOutline.Position = Vector2.new(xPos, yPos)
+                Drawings.BoxOutline.Visible = true
+                Drawings.BoxOutline.Color = gameObjects.boxOutlineColor
+                Drawings.BoxOutline.Thickness = 2
+            else
+                Drawings.BoxOutline.Visible = false
+            end
+            
+            -- Name
+            if gameObjects.nameEnabled and player and player.Name then
+                Drawings.Name.Position = Vector2.new(centerX, yPos - 18)
+                Drawings.Name.Text = "[" .. player.Name .. "]"
+                Drawings.Name.Visible = true
+                Drawings.Name.Color = gameObjects.nameColor
+            else
+                Drawings.Name.Visible = false
+            end
+            
+            -- Distance
+            if gameObjects.distanceEnabled and distance then
+                local meters = math.floor(distance / 2.5714)
+                Drawings.Distance.Position = Vector2.new(centerX, yPos + height + 5)
+                Drawings.Distance.Text = string.format("[%d M]", meters or 0)
+                Drawings.Distance.Visible = true
+                Drawings.Distance.Color = gameObjects.distanceColor
+            else
+                Drawings.Distance.Visible = false
+            end
         else
             for _, d in pairs(Drawings) do if d then d.Visible = false end end
         end
@@ -507,33 +538,6 @@ local function ESPOnEntity(entity)
     
     gameObjects.ESPs[entity] = { Connection = connection, Drawings = Drawings, SkeletonLines = skeletonLines, Player = player }
 end
-
-local function RefreshESP()
-    for _, entity in pairs(gameObjects.entitiesfolder:GetChildren()) do
-        if entity:IsA("Model") and IsEntityAlive(entity) then
-            local player = GetPlayerFromEntity(entity)
-            if player and player ~= LocalPlayer then ESPOnEntity(entity) end
-        end
-    end
-end
-
-if gameObjects.entitiesfolder then
-    for _, entity in pairs(gameObjects.entitiesfolder:GetChildren()) do
-        if entity:IsA("Model") then
-            local player = GetPlayerFromEntity(entity)
-            if player and player ~= LocalPlayer then task.wait(0.1); ESPOnEntity(entity) end
-        end
-    end
-    gameObjects.entitiesfolder.ChildAdded:Connect(function(entity)
-        task.wait(0.1)
-        if entity:IsA("Model") and IsEntityAlive(entity) then
-            local player = GetPlayerFromEntity(entity)
-            if player and player ~= LocalPlayer then ESPOnEntity(entity) end
-        end
-    end)
-    gameObjects.entitiesfolder.ChildRemoved:Connect(RemoveESP)
-end
-RefreshESP()
 
 -- ========== AIMBOT (WEAPON E PREDIÇÃO) ==========
 local function getCurrentWeapon()
