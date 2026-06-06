@@ -131,6 +131,8 @@ task.spawn(function()
     task.wait(0.2)
     
     _G.UI = loadModule("7_ui.lua", "UI")
+
+    _G.Missing = loadModule("8_missing.lua", "Missing")    
     
     -- Inicializa a UI
     if _G.UI and _G.Library and _G.ThemeManager and _G.SaveManager then
