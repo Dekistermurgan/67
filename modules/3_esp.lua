@@ -1,11 +1,11 @@
--- MÓDULO: ESP
+-- MÓDULO: ESP (COMPLETO)
 local ESP = {}
 
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
+local Workspace = workspace
 
--- Configurações
 ESP.config = {
     enabled = false,
     boxEnabled = false,
@@ -29,9 +29,8 @@ ESP.gameObjects = {
     playerlist = nil
 }
 
--- Funções auxiliares
 local function worldToScreen(pos)
-    local cam = workspace.CurrentCamera
+    local cam = Workspace.CurrentCamera
     if not cam then return Vector2.new(0, 0), false end
     local pt, onScreen = cam:WorldToViewportPoint(pos)
     return Vector2.new(pt.X, pt.Y), onScreen
@@ -51,6 +50,24 @@ local function IsEntityAlive(entity)
     return entity:FindFirstChild("UpperTorso") ~= nil
 end
 
+local function RemoveESP(entity)
+    local esp = ESP.gameObjects.ESPs[entity]
+    if esp then
+        if esp.Connection then pcall(function() esp.Connection:Disconnect() end) end
+        if esp.Drawings then
+            for _, drawing in pairs(esp.Drawings) do
+                if drawing then pcall(function() drawing:Remove() end) end
+            end
+        end
+        if esp.SkeletonLines then
+            for _, line in pairs(esp.SkeletonLines) do
+                if line then pcall(function() line:Remove() end) end
+            end
+        end
+        ESP.gameObjects.ESPs[entity] = nil
+    end
+end
+
 local function CreateSkeletonLines()
     local lines = {}
     for i = 1, 14 do
@@ -64,8 +81,8 @@ local function CreateSkeletonLines()
 end
 
 local function UpdateSkeleton(entity, lines)
-    if not ESP.config.skeletonEnabled or not entity or not workspace.CurrentCamera then return end
-    local cam = workspace.CurrentCamera
+    if not ESP.config.skeletonEnabled or not entity or not Workspace.CurrentCamera then return end
+    local cam = Workspace.CurrentCamera
     local connections = {
         {"Head", "UpperTorso"}, {"UpperTorso", "LowerTorso"},
         {"UpperTorso", "LeftUpperArm"}, {"LeftUpperArm", "LeftLowerArm"}, {"LeftLowerArm", "LeftHand"},
@@ -113,6 +130,8 @@ local function updateESPBoxes(drawings, xPos, yPos, width, height)
         drawings.BoxOutline.Visible = true
         drawings.BoxOutline.Color = ESP.config.boxOutlineColor
         drawings.BoxOutline.Thickness = 2
+        drawings.BoxOutline.ZIndex = 1
+        if drawings.Box then drawings.Box.ZIndex = 2 end
     else
         drawings.BoxOutline.Visible = false
     end
@@ -124,6 +143,7 @@ local function updateESPTexts(drawings, player, distance, centerX, yPos, height)
         drawings.Name.Text = "[" .. player.Name .. "]"
         drawings.Name.Visible = true
         drawings.Name.Color = ESP.config.nameColor
+        drawings.Name.ZIndex = 3
     else
         drawings.Name.Visible = false
     end
@@ -134,24 +154,29 @@ local function updateESPTexts(drawings, player, distance, centerX, yPos, height)
         drawings.Distance.Text = string.format("[%d M]", meters)
         drawings.Distance.Visible = true
         drawings.Distance.Color = ESP.config.distanceColor
+        drawings.Distance.ZIndex = 3
     else
         drawings.Distance.Visible = false
     end
 end
 
 local function updateESPCleanup(drawings, skeletonLines)
-    for _, d in pairs(drawings) do if d then d.Visible = false end end
-    for _, l in pairs(skeletonLines) do if l then l.Visible = false end end
+    if drawings then
+        for _, d in pairs(drawings) do if d then d.Visible = false end end
+    end
+    if skeletonLines then
+        for _, l in pairs(skeletonLines) do if l then l.Visible = false end end
+    end
 end
 
 local function processESPFrame(entity, player, drawings, skeletonLines)
-    local cam = workspace.CurrentCamera
+    local cam = Workspace.CurrentCamera
     if not ESP.config.enabled then
         updateESPCleanup(drawings, skeletonLines)
         return
     end
     if not entity or not entity.Parent or not IsEntityAlive(entity) then 
-        ESP.RemoveEntity(entity)
+        RemoveESP(entity)
         return 
     end
 
@@ -201,7 +226,7 @@ local function processESPFrame(entity, player, drawings, skeletonLines)
 end
 
 function ESP.AddEntity(entity)
-    ESP.RemoveEntity(entity)
+    RemoveESP(entity)
     local player = GetPlayerFromEntity(entity)
     if not player or player == LocalPlayer then return end
 
@@ -212,6 +237,7 @@ function ESP.AddEntity(entity)
         Name = Drawing.new('Text'),
         Distance = Drawing.new('Text'),
     }
+    
     Drawings.Name.Color = ESP.config.nameColor
     Drawings.Name.Center = true
     Drawings.Name.Outline = true
@@ -239,17 +265,7 @@ function ESP.AddEntity(entity)
 end
 
 function ESP.RemoveEntity(entity)
-    local esp = ESP.gameObjects.ESPs[entity]
-    if esp then
-        if esp.Connection then pcall(function() esp.Connection:Disconnect() end) end
-        for _, drawing in pairs(esp.Drawings or {}) do
-            if drawing then pcall(function() drawing:Remove() end) end
-        end
-        for _, line in pairs(esp.SkeletonLines or {}) do
-            if line then pcall(function() line:Remove() end) end
-        end
-        ESP.gameObjects.ESPs[entity] = nil
-    end
+    RemoveESP(entity)
 end
 
 function ESP.Refresh()
@@ -257,7 +273,10 @@ function ESP.Refresh()
     for _, entity in pairs(ESP.gameObjects.entitiesfolder:GetChildren()) do
         if entity:IsA("Model") and IsEntityAlive(entity) then
             local player = GetPlayerFromEntity(entity)
-            if player and player ~= LocalPlayer then ESP.AddEntity(entity) end
+            if player and player ~= LocalPlayer then 
+                task.wait(0.05)
+                ESP.AddEntity(entity)
+            end
         end
     end
 end
@@ -274,7 +293,6 @@ function ESP.SetPlayerList(obj)
     ESP.gameObjects.playerlist = obj
 end
 
--- Callbacks
 function ESP.setEnabled(v) ESP.config.enabled = v end
 function ESP.setBoxEnabled(v) ESP.config.boxEnabled = v end
 function ESP.setBoxFilled(v) ESP.config.boxFilledEnabled = v end
