@@ -1,13 +1,11 @@
--- MÓDULO: WORLD (Car Mods, Zombie Expander, No Inventory Blur, No Car Damage)
+-- MÓDULO: WORLD (COMPLETO)
 local World = {}
 
 local RunService = game:GetService("RunService")
 local Workspace = workspace
 local lighting = game:GetService("Lighting")
 
--- Configurações
 World.config = {
-    -- Car Speed
     carSpeedEnabled = false,
     carForwardMaxSpeed = 100,
     carReverseMaxSpeed = 40,
@@ -20,13 +18,9 @@ World.config = {
     carStaticFriction = 5,
     carKineticFriction = 4,
     carSlipThreshold = 1,
-    
-    -- Zombie Expander
     zombieExpanderEnabled = false,
     zombieHitboxSize = 16,
     zombieHeadTransparency = 0.9,
-    
-    -- Outros
     noInventoryBlurEnabled = false,
     removeGrassEnabled = false,
     noTreeEnabled = false
