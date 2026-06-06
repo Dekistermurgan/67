@@ -126,8 +126,6 @@ task.wait(0.1)
 _G.Modules.UI = loadModule("6_ui.lua", "UI")
 task.wait(0.1)
 
-_G.Modules.Main = loadModule("7_main.lua", "Main")
-
 -- Inicializa UI
 if _G.Modules.UI then
     _G.Modules.UI.Initialize(_G.Library, _G.ThemeManager, _G.SaveManager)
