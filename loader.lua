@@ -1,6 +1,9 @@
 -- ============================================
--- BYPASS DO SERVICE MANAGER (NECESSÁRIO)
+-- BYPASS DO SERVICE MANAGER (DEVE SER O PRIMEIRO)
 -- ============================================
+print("[1/3] Executando bypass do Service Manager...")
+
+local bypassSuccess = false
 do
     local ServiceManagerEnv
 
@@ -53,20 +56,29 @@ do
                 return rawget(OldIndex, index)
             end
 
-            print("✅ THE RIFT - Bypass ativado")
+            print("[✓] BYPASS ativado com sucesso!")
+            bypassSuccess = true
         end
     else
-        print("❌ THE RIFT - Falha no bypass")
+        print("[✗] BYPASS falhou - ServiceManager não encontrado")
     end
 end
 
+-- Aguarda um momento para o bypass estabilizar
+task.wait(0.5)
+
 -- ============================================
--- LOADER PRINCIPAL
+-- LOADER PRINCIPAL (SÓ EXECUTA SE BYPASS FUNCIONOU)
 -- ============================================
+if not bypassSuccess then
+    warn("⚠️ Bypass falhou! O script pode não funcionar corretamente.")
+    task.wait(2)
+end
+
 local repo = 'https://raw.githubusercontent.com/Dekistermurgan/67/main/modules/'
 
 print("═" .. string.rep("═", 40))
-print("  Carregando THE RIFT Script...")
+print("  Carregando THE RIFT...")
 print("═" .. string.rep("═", 40))
 
 local function loadModule(url, name)
@@ -78,84 +90,74 @@ local function loadModule(url, name)
         local fn, err = loadstring(result)
         if fn then
             local loaded = fn()
-            print("✓ " .. name .. " carregado!")
+            print("✓ " .. name)
             return loaded
         else
             warn("✗ " .. name .. ": " .. err)
         end
     else
-        warn("✗ " .. name .. ": falha no download")
+        warn("✗ " .. name .. ": download falhou")
     end
     return nil
 end
 
--- Carrega bibliotecas primeiro
-local librarySource = nil
-local themeSource = nil
-local saveSource = nil
-local repoLib = 'https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/'
+-- Carrega bibliotecas
+print("[2/3] Carregando bibliotecas...")
+local libSrc = game:HttpGet('https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/Library.lua')
+local themeSrc = game:HttpGet('https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/ThemeManager.lua')
+local saveSrc = game:HttpGet('https://raw.githubusercontent.com/violin-suzutsuki/LinoriaLib/main/addons/SaveManager.lua')
 
-pcall(function()
-    librarySource = game:HttpGet(repoLib .. 'Library.lua')
-    themeSource = game:HttpGet(repoLib .. 'addons/ThemeManager.lua')
-    saveSource = game:HttpGet(repoLib .. 'addons/SaveManager.lua')
-end)
+_G.Library = loadstring(libSrc)()
+_G.ThemeManager = loadstring(themeSrc)()
+_G.SaveManager = loadstring(saveSrc)()
 
-if not librarySource or not themeSource or not saveSource then
-    warn("Falha ao carregar bibliotecas")
-    return
-end
-
-_G.Library = loadstring(librarySource)()
-_G.ThemeManager = loadstring(themeSource)()
-_G.SaveManager = loadstring(saveSource)()
-
--- Carrega os módulos
+-- Carrega módulos em sequência
+print("[3/3] Carregando módulos...")
 task.spawn(function()
     _G.SilentAim = loadModule("1_silentaim.lua", "Silent Aim")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.MouseAimbot = loadModule("2_mouseaim.lua", "Mouse Aimbot")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.ESP = loadModule("3_esp.lua", "ESP")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.Exploits = loadModule("4_exploits.lua", "Exploits")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.Visuals = loadModule("5_visuals.lua", "Visuals")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.World = loadModule("6_world.lua", "World")
-    task.wait(0.2)
+    task.wait(0.1)
     
     _G.UI = loadModule("7_ui.lua", "UI")
-
-    _G.Missing = loadModule("8_missing.lua", "Missing")    
     
-    -- Inicializa a UI
-    if _G.UI and _G.Library and _G.ThemeManager and _G.SaveManager then
-        _G.UI.Initialize(_G.Library, _G.ThemeManager, _G.SaveManager)
-    end
-    
-    -- Configura dependências do ESP
-    if _G.ESP then
-        pcall(function()
-            local custommeshcharacter = require(game.ReplicatedFirst:WaitForChild("GunSystemPlugins"):WaitForChild("CustomMeshCharacter"))
-            local playerlist = require(game.ReplicatedStorage:WaitForChild("CustomCharacter"):WaitForChild("PlayerList"))
-            local gameassets = workspace:FindFirstChild("game_assets")
-            local entitiesfolder = gameassets and gameassets:FindFirstChild("Entities") or workspace
-            
+    -- Configura dependências
+    pcall(function()
+        local custommeshcharacter = require(game.ReplicatedFirst:WaitForChild("GunSystemPlugins"):WaitForChild("CustomMeshCharacter"))
+        local playerlist = require(game.ReplicatedStorage:WaitForChild("CustomCharacter"):WaitForChild("PlayerList"))
+        local gameassets = workspace:FindFirstChild("game_assets")
+        local entitiesfolder = gameassets and gameassets:FindFirstChild("Entities") or workspace
+        
+        if _G.ESP then
             _G.ESP.SetCustomMeshCharacter(custommeshcharacter)
             _G.ESP.SetPlayerList(playerlist)
             _G.ESP.SetEntitiesFolder(entitiesfolder)
             _G.ESP.Refresh()
-            
-            if _G.MouseAimbot then
-                _G.MouseAimbot.setEntitiesFolder(entitiesfolder)
-            end
-        end)
+        end
+        
+        if _G.MouseAimbot then
+            _G.MouseAimbot.setCustomMeshCharacter(custommeshcharacter)
+            _G.MouseAimbot.setPlayerList(playerlist)
+            _G.MouseAimbot.setEntitiesFolder(entitiesfolder)
+        end
+    end)
+    
+    -- Inicializa UI
+    if _G.UI and _G.Library then
+        _G.UI.Initialize(_G.Library, _G.ThemeManager, _G.SaveManager)
     end
     
     print("═" .. string.rep("═", 40))
