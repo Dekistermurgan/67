@@ -1,14 +1,12 @@
--- MÓDULO: SILENT AIM
+-- MÓDULO: SILENT AIM (COMPLETO)
 local SilentAim = {}
 
--- Variáveis locais (menos registros)
 local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
--- Configurações
 SilentAim.flags = {
     Enabled = false,
     TeamCheck = true,
@@ -21,11 +19,9 @@ SilentAim.flags = {
 
 SilentAim.prediction_mode = "axal"
 
--- Referências
 local gundata = ReplicatedStorage:FindFirstChild("GunSystemAssets") and ReplicatedStorage.GunSystemAssets:FindFirstChild("GunData")
 local sv_config = ReplicatedStorage:FindFirstChild("CustomCharacterConfigs") and ReplicatedStorage.CustomCharacterConfigs:FindFirstChild("Configuration") and ReplicatedStorage.CustomCharacterConfigs.Configuration:FindFirstChild("Server")
 
--- FOV Circle
 local fovCircle = Drawing.new("Circle")
 fovCircle.Visible = false
 fovCircle.Color = Color3.fromRGB(255, 0, 0)
@@ -34,7 +30,6 @@ fovCircle.NumSides = 30
 fovCircle.Radius = SilentAim.flags.FovSize
 fovCircle.Transparency = 1
 
--- Atualizar posição do FOV
 RunService.Heartbeat:Connect(function()
     local cam = workspace.CurrentCamera
     if cam and fovCircle.Visible then
@@ -42,7 +37,6 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
--- Get current gun
 local function get_current_gun(plr)
     if not plr then return "Fists" end
     local c = plr:FindFirstChild("CurrentSelectedObject")
@@ -51,7 +45,6 @@ local function get_current_gun(plr)
     return c and c.Name or "Fists"
 end
 
--- Get entity list
 local silentEntitylist = nil
 for _, gc in ipairs(getgc(true)) do
     if type(gc) == "table" then
@@ -67,7 +60,6 @@ for _, gc in ipairs(getgc(true)) do
     end
 end
 
--- Prediction functions
 local function predict_axal(origin, pos, vel, speed, drop)
     local dist = (origin - pos).Magnitude
     local t = dist / speed
@@ -82,7 +74,6 @@ local function predict_priv9(origin, pos, vel, speed, drop)
     return pos + (vel * t) + Vector3.new(0, drop * t * t, 0)
 end
 
--- Get closest target
 local function get_closest_target_silent(fov_size, aimpart, team_check)
     local best_part, best_player, best_root
     local max_distance = fov_size
@@ -121,7 +112,6 @@ local function get_closest_target_silent(fov_size, aimpart, team_check)
     return best_part, best_player, best_root
 end
 
--- Full prediction
 local function full_prediction_silent(target_position, target_collider)
     if not target_position then return nil end
     
@@ -157,7 +147,6 @@ local function full_prediction_silent(target_position, target_collider)
     return predict_axal(campos, target_position, velocity, proj_speed, proj_drop)
 end
 
--- SILENT AIM HOOK (INALTERADO)
 local oldBufferHook = nil
 oldBufferHook = hookfunction(buffer.create, function(size, ...)
     if size ~= 300 then
@@ -212,25 +201,25 @@ oldBufferHook = hookfunction(buffer.create, function(size, ...)
     end
     
     local cf = CFrame.lookAt(Vector3.zero, ld)
-    local pitch2, yaw2, roll2 = cf:ToEulerAnglesYXZ()
+    local pitch2, yaw2 = cf:ToEulerAnglesYXZ()
     local dir = cf.LookVector
     local r00, r01, r02, r10, r11, r12, r20, r21, r22 = cf:GetComponents()
+    local zeroCF = CFrame.new(0, 0, 0, r00, r01, r02, r10, r11, r12, r20, r21, r22)
     
     stack[32] = cf
     stack[33] = dir
     stack[34] = dir
     stack[36] = pitch2
     stack[37] = yaw2
-    stack[38] = CFrame.new(0, 0, 0, r00, r01, r02, r10, r11, r12, r20, r21, r22)
-    stack[39] = CFrame.new(0, 0, 0, r00, r01, r02, r10, r11, r12, r20, r21, r22)
-    stack[44] = CFrame.new(0, 0, 0, r00, r01, r02, r10, r11, r12, r20, r21, r22)
+    stack[38] = zeroCF
+    stack[39] = zeroCF
+    stack[44] = zeroCF
     stack[45] = dir
     stack[46] = dir
     
     return oldBufferHook(size, ...)
 end)
 
--- Callbacks públicas
 function SilentAim.setEnabled(v) SilentAim.flags.Enabled = v end
 function SilentAim.setTeamCheck(v) SilentAim.flags.TeamCheck = v end
 function SilentAim.setFOVRadius(v) SilentAim.flags.FovSize = v; fovCircle.Radius = v end
@@ -241,5 +230,4 @@ function SilentAim.setNoSpread(v) SilentAim.flags.NoSpread = v end
 function SilentAim.setResolveY(v) SilentAim.flags.ResolveY = v end
 function SilentAim.setInstantBullet(v) SilentAim.flags.InstantBullet = v end
 
--- Retorna o módulo
 return SilentAim
