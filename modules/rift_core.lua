@@ -1123,6 +1123,149 @@ function Core.InitializeUI(Library, ThemeManager, SaveManager)
     SaveManager:SetFolder('TheRift')
     SaveManager:BuildConfigSection(Tabs['UI Settings'])
     SaveManager:LoadAutoloadConfig()
+
+        -- ========== EXTRAS (Zombie, Car, Hitbox, etc) ==========
+    
+    -- Extra Groupbox (para funcionalidades extras)
+    local ExtrasGroup = Tabs.World:AddLeftGroupbox('Extras')
+    
+    -- Scanner
+    ExtrasGroup:AddButton("Run Scanner", function() 
+        if _G.Extras and _G.Extras.runScanner then _G.Extras.runScanner() end
+    end)
+    
+    -- Vehicle ESP
+    ExtrasGroup:AddToggle('CarESP', { Text = 'Vehicle ESP', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setCarEspEnabled(v) end 
+    end })
+    
+    -- No Inventory Blur
+    ExtrasGroup:AddToggle('NoInventoryBlur', { Text = 'No Inventory Blur', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setNoInventoryBlur(v) end 
+    end })
+    
+    -- No Car Damage
+    ExtrasGroup:AddButton('Toggle No Car Damage', function() 
+        if _G.Extras then _G.Extras.toggleNoCarDamage() end 
+    end)
+    
+    -- Remove Clouds
+    local originalCloudsEnabled = workspace.Terrain:FindFirstChild("Clouds") and workspace.Terrain.Clouds.Enabled or true
+    ExtrasGroup:AddToggle('RemoveClouds', { Text = 'Remove Clouds', Default = false, Callback = function(v)
+        if workspace.Terrain:FindFirstChild("Clouds") then
+            workspace.Terrain.Clouds.Enabled = not v
+        end
+    end })
+    
+    -- Skybox
+    local SkyboxSection = Tabs.World:AddRightGroupbox('Skybox Changer')
+    SkyboxSection:AddDropdown('Skybox', { Text = 'Skybox', Default = 'Default', Values = { 'Default', 'Standard', 'Blue Sky', 'Vaporwave', 'Redshift', 'Blaze', 'Among Us', 'Dark Night', 'Bright Pink', 'Purple Sky', 'Galaxy' }, Callback = function(v) 
+        if _G.Extras then _G.Extras.applySkybox(v) end 
+    end })
+    
+    -- Zombie Expander
+    local ZombieSection = Tabs.Exploit:AddRightGroupbox('Zombie Expander')
+    ZombieSection:AddToggle('ZombieExpanderToggle', { Text = 'Zombie Expander', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setZombieExpander(v) end 
+    end })
+    ZombieSection:AddSlider('ZombieHitboxSize', { Text = 'Hitbox Size', Default = 16, Min = 1, Max = 50, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setZombieHitboxSize(v) end 
+    end })
+    ZombieSection:AddSlider('ZombieHeadTransparency', { Text = 'Head Transparency', Default = 0.9, Min = 0, Max = 1, Rounding = 2, Callback = function(v) 
+        if _G.Extras then _G.Extras.setZombieHeadTransparency(v) end 
+    end })
+    
+    -- Car Speed
+    local CarSpeedSection = Tabs.Exploit:AddRightGroupbox('Car Speed')
+    CarSpeedSection:AddToggle('CarSpeedToggle', { Text = 'Car Speed', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setCarSpeedEnabled(v) end 
+    end })
+    CarSpeedSection:AddSlider('CarForwardMaxSpeed', { Text = 'Forward Max Speed', Default = 100, Min = 50, Max = 300, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setCarForwardMaxSpeed(v) end 
+    end })
+    CarSpeedSection:AddSlider('CarReverseMaxSpeed', { Text = 'Reverse Max Speed', Default = 40, Min = 20, Max = 150, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setCarReverseMaxSpeed(v) end 
+    end })
+    CarSpeedSection:AddSlider('CarAcceleration', { Text = 'Acceleration', Default = 60, Min = 10, Max = 200, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setCarAcceleration(v) end 
+    end })
+    
+    -- Hitbox Expander
+    local HitboxSection = Tabs.Exploit:AddRightGroupbox('Hitbox Expander')
+    HitboxSection:AddToggle('HitboxExpanderToggle', { Text = 'Enable Hitbox Expander', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setHitboxExpanderEnabled(v) end 
+    end })
+    HitboxSection:AddSlider('HitboxExpanderRadius', { Text = 'Hitbox Radius', Default = 5, Min = 1, Max = 10, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setHitboxExpanderRadius(v) end 
+    end })
+    
+    -- Speedhack
+    local SpeedhackSection = Tabs.Exploit:AddLeftGroupbox('Speedhack')
+    SpeedhackSection:AddToggle('SpeedhackToggle', { Text = 'Speedhack', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setSpeedhackEnabled(v) end 
+    end })
+    SpeedhackSection:AddSlider('SpeedhackSlider', { Text = 'Speedhack Speed', Default = 20, Min = 5, Max = 100, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setSpeedhackSpeed(v) end 
+    end })
+    
+    -- Auto Jump
+    SpeedhackSection:AddDivider()
+    SpeedhackSection:AddToggle('AutoJump', { Text = 'Auto Jump (Bunny Hop)', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setAutoJumpEnabled(v) end 
+    end })
+    
+    -- Climb Speed
+    SpeedhackSection:AddToggle('ClimbSpeedToggle', { Text = 'Climb Speed', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setClimbSpeedEnabled(v) end 
+    end })
+    SpeedhackSection:AddSlider('ClimbSpeedValue', { Text = 'Climb Speed', Default = 15, Min = 0, Max = 50, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setClimbSpeedValue(v) end 
+    end })
+    
+    -- Offset Changer
+    local OffsetSection = Tabs.Combat:AddRightGroupbox('Offset Changer')
+    OffsetSection:AddToggle('OffsetToggle', { Text = 'Enable Offset Changer', Default = false, Callback = function(v) 
+        if _G.Extras then _G.Extras.setOffsetEnabled(v) end 
+    end })
+    OffsetSection:AddSlider('OffsetX', { Text = 'Offset X', Default = 0, Min = -10, Max = 10, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setOffsetX(v) end 
+    end })
+    OffsetSection:AddSlider('OffsetY', { Text = 'Offset Y', Default = 0, Min = -10, Max = 10, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setOffsetY(v) end 
+    end })
+    OffsetSection:AddSlider('OffsetZ', { Text = 'Offset Z', Default = 0, Min = -10, Max = 10, Rounding = 1, Callback = function(v) 
+        if _G.Extras then _G.Extras.setOffsetZ(v) end 
+    end })
+    
+    -- No Gun Sway / Bob (já estavam no Gun Mods)
+    GunSection:AddDivider()
+    GunSection:AddToggle('NoGunSway', { Text = 'No Gun Sway', Default = false, Callback = function(v)
+        for _, obj in getgc(true) do
+            if typeof(obj) == "table" and rawget(obj, "_positionVelocity") then
+                if v then
+                    rawset(obj, "_positionVelocity", function() return Vector3.zero, Vector3.zero end)
+                else
+                    rawset(obj, "_positionVelocity", nil)
+                end
+            end
+        end
+    end })
+    
+    GunSection:AddToggle('NoGunBob', { Text = 'No Gun Bob', Default = false, Callback = function(v)
+        for _, tbl in getgc(true) do
+            if type(tbl) == 'table' and rawget(tbl, 'BobSpeed') then
+                if v then
+                    tbl.BobSpeed = 0
+                    tbl.BobAmplitudeHorizontal = 0
+                    tbl.BobAmplitudeVertical = 0
+                else
+                    tbl.BobSpeed = 1
+                    tbl.BobAmplitudeHorizontal = 0.5
+                    tbl.BobAmplitudeVertical = 0.3
+                end
+            end
+        end
+    end })
     
     print("✅ UI Carregada!")
 end
