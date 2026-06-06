@@ -1,4 +1,4 @@
--- MÓDULO: MOUSE AIMBOT (COMPLETO)
+-- MÓDULO: MOUSE AIMBOT (CORRIGIDO)
 local MouseAimbot = {}
 
 local RunService = game:GetService("RunService")
@@ -27,19 +27,34 @@ MouseAimbot.config = {
     hitPart = "Head"
 }
 
-MouseAimbot.fovSpinAngle = 0
-MouseAimbot.lastSpinUpdate = tick()
-MouseAimbot.currentWeaponCache = nil
-MouseAimbot.lastWeaponCheck = 0
-
-local gameObjects = {
+-- Variáveis compartilhadas com o script principal
+MouseAimbot.shared = {
     entitiesfolder = nil,
-    targetVelocities = {}
+    targetVelocities = {},
+    custommeshcharacter = nil,
+    playerlist = nil,
+    ESPEnabled = false,
+    boxEnabled = false,
+    boxFilledEnabled = false,
+    boxOutlineEnabled = false,
+    nameEnabled = false,
+    distanceEnabled = false,
+    skeletonEnabled = false,
+    boxColor = Color3.fromRGB(255, 255, 255),
+    boxOutlineColor = Color3.fromRGB(0, 0, 0),
+    nameColor = Color3.fromRGB(255, 255, 255),
+    distanceColor = Color3.fromRGB(255, 255, 255),
+    skeletonColor = Color3.fromRGB(255, 255, 255),
+    maxESPDistance = 1000
 }
 
 -- FOV Shapes
 local fovShapeObjects = {}
 local currentFOVShape = "Circle"
+MouseAimbot.fovSpinAngle = 0
+MouseAimbot.lastSpinUpdate = tick()
+MouseAimbot.currentWeaponCache = nil
+MouseAimbot.lastWeaponCheck = 0
 
 local function rotatePoint(center, point, angle)
     local dx = point.X - center.X
@@ -236,7 +251,7 @@ end
 local function getTargetVelocity(part)
     if not part then return Vector3.zero end
     local now = tick()
-    local data = gameObjects.targetVelocities[part]
+    local data = MouseAimbot.shared.targetVelocities[part]
     if data then
         local delta = now - data.time
         if delta > 0 and delta < 0.2 then
@@ -248,7 +263,7 @@ local function getTargetVelocity(part)
             return vel
         end
     end
-    gameObjects.targetVelocities[part] = { pos = part.Position, time = now, vel = Vector3.zero }
+    MouseAimbot.shared.targetVelocities[part] = { pos = part.Position, time = now, vel = Vector3.zero }
     return Vector3.zero
 end
 
@@ -278,7 +293,15 @@ function MouseAimbot.predictPosition(targetPart, weaponConfig, distance)
 end
 
 function MouseAimbot.setEntitiesFolder(folder)
-    gameObjects.entitiesfolder = folder
+    MouseAimbot.shared.entitiesfolder = folder
+end
+
+function MouseAimbot.setCustomMeshCharacter(obj)
+    MouseAimbot.shared.custommeshcharacter = obj
+end
+
+function MouseAimbot.setPlayerList(obj)
+    MouseAimbot.shared.playerlist = obj
 end
 
 local function worldToScreen(pos)
@@ -294,8 +317,8 @@ local function IsEntityAlive(entity)
 end
 
 local function GetPlayerFromEntity(entity)
-    local custommeshcharacter = gameObjects.custommeshcharacter
-    local playerlist = gameObjects.playerlist
+    local custommeshcharacter = MouseAimbot.shared.custommeshcharacter
+    local playerlist = MouseAimbot.shared.playerlist
     if not custommeshcharacter or not playerlist then return nil end
     local char = custommeshcharacter:GetCharacterFromWorldCharacter(entity)
     if not char then return nil end
@@ -313,7 +336,7 @@ function MouseAimbot.updateAimbot(center)
     local bestPos = nil
     local bestDist = math.huge
     local cam = Workspace.CurrentCamera
-    local entities = gameObjects.entitiesfolder
+    local entities = MouseAimbot.shared.entitiesfolder
     
     if not entities then return end
     
@@ -413,6 +436,13 @@ function MouseAimbot.setupRenderLoop()
             local center = Vector2.new(cam.ViewportSize.X / 2, cam.ViewportSize.Y / 2)
             MouseAimbot.updateAimbot(center)
         end
+        
+        -- Cleanup target velocities
+        for part in pairs(MouseAimbot.shared.targetVelocities) do
+            if not part or not part.Parent then
+                MouseAimbot.shared.targetVelocities[part] = nil
+            end
+        end
     end)
 end
 
@@ -437,9 +467,6 @@ function MouseAimbot.setVerticalOffset(v) MouseAimbot.config.verticalOffset = v 
 function MouseAimbot.setHitPart(v) MouseAimbot.config.hitPart = v end
 function MouseAimbot.setKeybind(key) MouseAimbot.config.keybind = key end
 function MouseAimbot.setAiming(v) MouseAimbot.config.aiming = v end
-
-function MouseAimbot.setCustomMeshCharacter(obj) gameObjects.custommeshcharacter = obj end
-function MouseAimbot.setPlayerList(obj) gameObjects.playerlist = obj end
 
 MouseAimbot.setupRenderLoop()
 
