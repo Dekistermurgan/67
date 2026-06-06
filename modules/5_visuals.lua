@@ -1,4 +1,4 @@
--- MÓDULO: VISUAIS (Chams, Skybox, Lighting)
+-- MÓDULO: VISUAIS (COMPLETO)
 local Visuals = {}
 
 local RunService = game:GetService("RunService")
@@ -7,36 +7,24 @@ local LocalPlayer = Players.LocalPlayer
 local lighting = game:GetService("Lighting")
 local Workspace = workspace
 
--- Configurações
 Visuals.config = {
-    -- Arm Chams
     armChamsEnabled = false,
     armChamsColor = Color3.fromRGB(255, 255, 255),
     armChamsMaterial = Enum.Material.ForceField,
-    
-    -- Weapon Chams
     weaponChamsEnabled = false,
     weaponChamsColor = Color3.fromRGB(244, 224, 155),
     weaponChamsMaterial = Enum.Material.ForceField,
-    
-    -- Self Chams
     selfChamsEnabled = false,
     selfChamsColor = Color3.fromRGB(128, 0, 128),
     selfChamsMaterial = Enum.Material.ForceField,
     selfChamsTransparency = 0.2,
     selfChamsHeadTransparency = 1,
-    
-    -- Long Neck
     longNeckEnabled = false,
     longNeckHeight = 5,
-    
-    -- Lighting
     fullbrightEnabled = false,
     noFogEnabled = false,
     timeEnabled = false,
     timeValue = 12,
-    
-    -- Skybox
     currentSkybox = "Default"
 }
 
@@ -45,6 +33,7 @@ Visuals.armChamsUpdater = nil
 Visuals.selfChamsUpdater = nil
 Visuals.selfChamsCharacter = nil
 Visuals.gunplugin = nil
+
 Visuals.originalLightingSettings = {
     Brightness = lighting.Brightness,
     ClockTime = lighting.ClockTime,
@@ -52,7 +41,6 @@ Visuals.originalLightingSettings = {
     OutdoorAmbient = lighting.OutdoorAmbient
 }
 
--- Skyboxes
 Visuals.skyboxes = {
     ["Standard"] = { "91458024", "91457980", "91458024", "91458024", "91458024", "91458002" },
     ["Blue Sky"] = { "591058823", "591059876", "591058104", "591057861", "591057625", "591059642" },
@@ -66,7 +54,6 @@ Visuals.skyboxes = {
     ["Galaxy"] = { "15125283003", "15125281008", "15125277539", "15125279325", "15125274388", "15125275800" },
 }
 
--- Original skybox backup
 local originalSkybox = {}
 local sky = lighting:FindFirstChild("Sky")
 if sky then
@@ -125,7 +112,7 @@ end
 
 local function updateSkinColor()
     if not Visuals.config.armChamsEnabled then return end
-    local camera = workspace.CurrentCamera
+    local camera = Workspace.CurrentCamera
     if not camera then return end
     
     for _, obj in pairs(camera:GetDescendants()) do
@@ -166,7 +153,7 @@ local function setupArmChamsConnections()
     end)
     table.insert(Visuals.armChamsConnections, charAddedConn)
     
-    local cameraConn = workspace.CurrentCamera.DescendantAdded:Connect(function(obj)
+    local cameraConn = Workspace.CurrentCamera.DescendantAdded:Connect(function(obj)
         if Visuals.config.armChamsEnabled then
             if (obj:IsA("BasePart") and (obj.Name == "Skin" or isArmPart(obj))) then
                 task.wait(0.05)
@@ -205,7 +192,7 @@ function Visuals.setArmChamsEnabled(v)
         Visuals.armChamsConnections = {}
         local character = LocalPlayer.Character
         if character then restoreArmChamsFromCharacter(character) end
-        local camera = workspace.CurrentCamera
+        local camera = Workspace.CurrentCamera
         if camera then
             for _, obj in pairs(camera:GetDescendants()) do
                 if obj.Name == "Skin" and obj:IsA("BasePart") then
@@ -238,33 +225,33 @@ end
 
 function Visuals.setWeaponChamsEnabled(v)
     Visuals.config.weaponChamsEnabled = v
-    if v and workspace.Camera then 
-        local currentGun = workspace.Camera:FindFirstChild("CurrentWeapon")
+    if v and Workspace.Camera then 
+        local currentGun = Workspace.Camera:FindFirstChild("CurrentWeapon")
         if currentGun then changeWeaponLook(currentGun) end
     end
 end
 
 function Visuals.setWeaponChamsColor(c) 
     Visuals.config.weaponChamsColor = c
-    if Visuals.config.weaponChamsEnabled and workspace.Camera then 
-        local currentGun = workspace.Camera:FindFirstChild("CurrentWeapon")
+    if Visuals.config.weaponChamsEnabled and Workspace.Camera then 
+        local currentGun = Workspace.Camera:FindFirstChild("CurrentWeapon")
         if currentGun then changeWeaponLook(currentGun) end
     end
 end
 
 function Visuals.setWeaponMaterial(v) 
     Visuals.config.weaponChamsMaterial = Enum.Material[v]
-    if Visuals.config.weaponChamsEnabled and workspace.Camera then 
-        local currentGun = workspace.Camera:FindFirstChild("CurrentWeapon")
+    if Visuals.config.weaponChamsEnabled and Workspace.Camera then 
+        local currentGun = Workspace.Camera:FindFirstChild("CurrentWeapon")
         if currentGun then changeWeaponLook(currentGun) end
     end
 end
 
 -- ========== SELF CHAMS ==========
 local function findCharacterByCamera()
-    local entitiesfolder = workspace:FindFirstChild("game_assets") and workspace.game_assets:FindFirstChild("Entities") or workspace
-    if not entitiesfolder or not workspace.CurrentCamera then return nil end
-    local cameraPos = workspace.CurrentCamera.CFrame.Position
+    local entitiesfolder = Workspace:FindFirstChild("game_assets") and Workspace.game_assets:FindFirstChild("Entities") or Workspace
+    if not entitiesfolder or not Workspace.CurrentCamera then return nil end
+    local cameraPos = Workspace.CurrentCamera.CFrame.Position
     local closest, closestDist = nil, 15
     for _, model in pairs(entitiesfolder:GetChildren()) do
         if model:IsA("Model") then
@@ -348,25 +335,10 @@ end
 -- ========== LIGHTING ==========
 function Visuals.setFullbright(v)
     Visuals.config.fullbrightEnabled = v
-    if v then
-        lighting.Brightness = 10
-        lighting.ClockTime = 12
-        lighting.GlobalShadows = false
-        lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
-    else
-        lighting.Brightness = Visuals.originalLightingSettings.Brightness
-        lighting.ClockTime = Visuals.originalLightingSettings.ClockTime
-        lighting.GlobalShadows = Visuals.originalLightingSettings.GlobalShadows
-        lighting.OutdoorAmbient = Visuals.originalLightingSettings.OutdoorAmbient
-    end
 end
 
 function Visuals.setNoFog(v)
     Visuals.config.noFogEnabled = v
-    local atmosphere = lighting:FindFirstChild("Atmosphere")
-    if atmosphere then
-        atmosphere.Density = v and 0 or 0.5
-    end
 end
 
 function Visuals.setTimeEnabled(v)
@@ -407,17 +379,23 @@ function Visuals.applySkybox(skyboxName)
     Visuals.config.currentSkybox = skyboxName
 end
 
--- Loop de lighting no RenderStepped
+-- Lighting loop
 RunService.RenderStepped:Connect(function()
     if Visuals.config.fullbrightEnabled then
         lighting.Brightness = 10
         lighting.ClockTime = 12
         lighting.GlobalShadows = false
         lighting.OutdoorAmbient = Color3.fromRGB(255, 255, 255)
+    elseif not Visuals.config.fullbrightEnabled and not Visuals.config.timeEnabled then
+        lighting.Brightness = Visuals.originalLightingSettings.Brightness
+        lighting.GlobalShadows = Visuals.originalLightingSettings.GlobalShadows
+        lighting.OutdoorAmbient = Visuals.originalLightingSettings.OutdoorAmbient
     end
     
     if Visuals.config.noFogEnabled and lighting:FindFirstChild("Atmosphere") then
         lighting.Atmosphere.Density = 0
+    elseif lighting:FindFirstChild("Atmosphere") and not Visuals.config.noFogEnabled then
+        lighting.Atmosphere.Density = Visuals.originalAtmosphereDensity or 0.5
     end
     
     if Visuals.config.timeEnabled then
@@ -425,9 +403,9 @@ RunService.RenderStepped:Connect(function()
     end
 end)
 
--- Setup weapon chamer
+-- Setup weapon changer
 local function setupWeaponChanger()
-    local cam = workspace.Camera
+    local cam = Workspace.Camera
     if not cam then return end
     local currentGun = cam:FindFirstChild("CurrentWeapon")
     if currentGun then changeWeaponLook(currentGun) end
